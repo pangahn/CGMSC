@@ -1,2 +1,1 @@
-# CMSMSC
-A pre-released MATLAB code of CMSMSC algorithm.
+This is the pre-released MATLAB code of **Consistent Manifold constrained Sparse Multi-view Subspace Clustering (CMSMSC)** algorithm.
