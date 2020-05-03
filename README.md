@@ -1,1 +1,1 @@
-This is the pre-released MATLAB code of **Consistent Manifold constrained Sparse Multi-view Subspace Clustering (CMSMSC)** algorithm.
+This is the MATLAB code of **Consensus graph constrained multi-view subspace clustering (CGMSC)** algorithm.
