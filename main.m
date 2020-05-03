@@ -18,7 +18,7 @@ else
 end
 
 %% 结果保存
-filename = fullfile('result', [main_opts.dataset ,'_' main_opts.sub_fix '.csv']);
+filename = fullfile('result/heatmap', [main_opts.dataset ,'_' main_opts.sub_fix '.csv']);
 if main_opts.save_result
     if ~exist(filename, 'file')
         header = {'Accuracy', 'NMI', 'Precision', 'Recall', 'F1', 'ARI',...
@@ -53,27 +53,32 @@ for kkk=1:length(main_opts.K)
     multiViewLLE_settings.K = main_opts.K(kkk);
     lle_filename = strcat('./lle/', main_opts.dataset, '_',  ...
         num2str(multiViewLLE_settings.K), '.mat');
+    
     % 如果本地已有数据则使用本地数据
-    fprintf('running multiViewLLE.m K=%d ===\n', multiViewLLE_settings.K)
     if multiViewLLE_settings.lle_file && exist(lle_filename, 'file')
+        fprintf('\n...Loading...MVLLE...\n')
         load(lle_filename, 'W')
     end
     % 参数设置重新计算或本地不存在数据
     if ~multiViewLLE_settings.lle_file || ~exist(lle_filename, 'file')
-        W = multiViewLLE(X, multiViewLLE_settings);
+        fprintf('\n...Computing...MVLLE...\n')
+        W = MVLLE(X, multiViewLLE_settings);
+%         W = SWMVLLE(X, multiViewLLE_settings);
         save(strcat('./lle/', main_opts.dataset, '_',...
             num2str(multiViewLLE_settings.K), '.mat'), 'W')
     end
+    %% main loop
     for i=1:length(lambda_list.lambda1)
         opts.lambda(1) = lambda_list.lambda1(i);
         for j=1:length(lambda_list.lambda2)
             opts.lambda(2) = lambda_list.lambda2(j);
             for k=1:length(lambda_list.lambda3)
                 opts.lambda(3) = lambda_list.lambda3(k);
-                fprintf('lambda1=%f, lambda2=%f, lambda3=%f, K=%d\n', ...
-                        opts.lambda(1), opts.lambda(2), opts.lambda(3), multiViewLLE_settings.K);
+                fprintf('lambda1=%d, lambda2=%0.3f, lambda3=%0.4f, K=%d\n', ...
+                        opts.lambda(1), opts.lambda(2), opts.lambda(3), ...
+                        multiViewLLE_settings.K);
                 for m=1:main_opts.M
-                    fprintf('>>> %d of %d ', m, main_opts.M);
+                    fprintf('>>> %d of %d\t', m, main_opts.M);
 
                     tic1 = tic;
                     try
@@ -83,7 +88,7 @@ for kkk=1:length(main_opts.K)
                             Zstar =  Zstar + alpha(v) * Z{v};
                         end
 
-                        final_Z = (abs(Zstar)+abs(Zstar'))/2;
+                        final_Z = 0.5 .* (abs(Zstar)+abs(Zstar'));
                         grps = SpectralClustering(final_Z, clusters);
                     catch ME
                         fprintf(['ERROR: ' ME.message '\n'])
@@ -111,13 +116,13 @@ for kkk=1:length(main_opts.K)
                         opts.lambda(1) opts.lambda(2) opts.lambda(3) ...
                         multiViewLLE_settings.K main_opts.normalize_method mean(time)];
                 
-                fprintf('\nACC: %0.4f(%0.4f)\n', ACC, std_ACC);
-                fprintf('NMI: %0.4f(%0.4f)\n', NMI, std_NMI);
-                fprintf('Precision: %0.4f(%0.4f)\n', P, std_P);
-                fprintf('Recall: %0.4f(%0.4f)\n', R, std_R);
-                fprintf('F1: %0.4f(%0.4f)\n', F1, std_F1);
-                fprintf('ARI: %0.4f(%0.4f)\n', ARI, std_ARI);
-                fprintf('time: %0.4f\n\n', mean(time));
+                fprintf('ACC: %0.4f(%0.4f)\t', ACC, std_ACC);
+                fprintf('NMI: %0.4f(%0.4f)\t', NMI, std_NMI);
+                fprintf('Precision: %0.4f(%0.4f)\t', P, std_P);
+                fprintf('Recall: %0.4f(%0.4f)\t', R, std_R);
+                fprintf('F1: %0.4f(%0.4f)\t', F1, std_F1);
+                fprintf('ARI: %0.4f(%0.4f)\t', ARI, std_ARI);
+                fprintf('time: %0.4f\n', mean(time));
                 if main_opts.save_result == 1
                     dlmwrite(filename, output, '-append', 'precision',...
                         '%.4f', 'newline', 'pc' );
